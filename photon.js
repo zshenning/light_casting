@@ -93,18 +93,18 @@ class Photon {
             //console.log('missing wall error caught');
             return [];
         }*/
-        if(this.wall == null) {
-            //console.log('missing wall error caught');
+        /*if(this.wall == null) {
+            console.log('missing wall error caught');
             return [];
-        }
+        }*/
         /*if(this.wall.material == null){
             console.log('no material');
             return [];
         }*/
-        if(this.wall.mirror == false) {
+        /*if(this.wall.mirror == false) {
             //console.log('no mirror');
             return [];
-        }
+        }*/
         if(this.impact_reflection == null) {
             return [];
         }
@@ -171,6 +171,9 @@ class Photon {
     }
 
     castEnviron(walls) {
+        let calc = walls.cast(this.pos,this.dir);
+        this.impact_reflection = calc.reflect;
+        return calc.dist;
         if( Array.isArray(walls)) {
             let min_distance = Infinity;
             let impact_wall;

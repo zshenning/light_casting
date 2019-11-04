@@ -2,12 +2,14 @@
 var light = [];
 var particle;
 //var scl = 20;
-var wall = [];
+//var wall = [];
+var wall = new Container();
 var i = 0;
 var food;
 var shape;
 var dots = [];
 var photon_limit = 2000;
+var q = [];
 
 function setup() {
   createCanvas(600, 600);
@@ -42,10 +44,10 @@ function setup() {
 let xxi = 10000;
 function draw() {
   background(0);
-  //wall.show();
-  for(w of wall) {
+  wall.show();
+  /*for(w of wall) {
     w.show();
-  }
+  }*/
   shape.show();
   particle.updatePos(mouseX,mouseY);
   particle.show();

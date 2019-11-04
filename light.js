@@ -1,3 +1,4 @@
+var MAX_POSS_DISTANCE = 1300;
 
 class Particle {
     constructor() {
@@ -123,6 +124,9 @@ class Boundary {
 
 
     direction() {
+        if(this.mirror == false) {
+            return null;
+        }
         let direction = vect2d(0,0);
         direction.x = this.a.x - this.b.x;
         direction.y = this.a.y - this.b.y;
@@ -155,6 +159,7 @@ class Boundary {
         if (t > 0 && t < 1 && u > 0) {
             //return u;
             //let col_pt = vect2d( pos.x + dir.x * u, pos.y + dir.y * u);
+            
             return {'dist': u, 'reflect': this.direction()}
             //return {'dist': dist, 'pt': pt, 'reflect': reflectVector(x,y)}
             //{'dist': u, 'reflectVector': this.reflectVector()}
@@ -197,6 +202,9 @@ class Polynomial {
     }
 
     reflectVector(x,y) {
+        if(this.mirror == false) {
+            return null;
+        }
         const m = this.a * 2 * x + this.b;
         return vect2d(1,m); //{'x': 1, 'y': m};
     }
@@ -231,32 +239,10 @@ class Polynomial {
     cast(pos, dir) {
         //Return distance as well as a pretend wall for this point
         
-        /*const m = dir.y / dir.x;
-        const b_intercept = pos.y - m * pos.x;
-        const a = this.a;
-        const b = this.b - m;
-        const c = this.c - b_intercept;
-        let inner = b*b - 4 * a * c;
-        if(inner < 0) {
-            return;
-        }
-        inner = pow(inner, 0.5);
-        const x1 = (inner - b) / (2*a);
-        const x2 = (-inner - b) / (2*a);
-
-        let roots = this.roots(pos,dir);
-        if(roots[0] != x1 || roots[1] != x2) {
-            console.log([roots[0], x1, roots[1], x2]);
-        }*/
-        
         let min_distance = Infinity;
         let pt = {'x': null, 'y': null};
         //let temp = this.roots(pos,dir);
-        /*if(! Array.isArray(temp)) {
-            //console.log(temp);
-            console.log([pos,dir]);
-            temp = [temp];
-        }*/
+        
         var x;
         for( x of this.roots(pos,dir)/*[x1,x2]*/) {
             if(this.start > x || this.stop < x) {
@@ -287,12 +273,6 @@ class Polynomial {
         stroke(255);
         noFill();
         beginShape();
-        /*for(let i=0; i<= 6.283; i += .001) {
-            let r = 100;
-            let x = cos(i)*r;
-            let y = sin(i) * r;
-            vertex(x,y);
-        }*/
         for(let i=0;i<this.length; i++){
             let x0 = i + this.start;
             let y0 = this.polyFun(x0);
@@ -309,9 +289,6 @@ function closestPtLine(pt, pos,dir) {
     if(dir.y == 0) {
         return vect2d(pt.x,pos.y);
     }
-    //let m = dir.y/dir.x;
-    //let mi = -dir.x/dir.y;
-    //y - y0 = m(x-x0)
 }
 
 function distanceToLine(pt,pos,dir) {
@@ -346,7 +323,9 @@ class Circle {
     }
 
     reflectVector(x,y) {
-        //const m = this.a * 2 * x + this.b;
+        if(this.mirror == false) {
+            return null;
+        }
         return vect2d(2 * (y - this.y),(-2) * (x - this.x)); //{'x': 1, 'y': m};
     }
 
@@ -395,13 +374,13 @@ class Circle {
 
 
 class Container {
-    constructor(x,y,r) {
+    constructor(x,y,rotation,scale) {
         this.x=x;
         this.y=y;
-        this.r=r;
-        this.r2 = r*r;
-        this.pt = vect2d(x,y);
+        this.rotation=rotation;
+        this.scale = scale;
         this.items = [];
+        this.matrix;
     }
 
     push(item) {
@@ -409,26 +388,31 @@ class Container {
     }
 
     cast(pos, dir) {
-        let dist = this.roots(pos, dir);
-        if(dist == null){
-            return;
+        let item;
+        let min_distance = Infinity;
+        let calc_pt;
+        for(item of this.items) {
+            let pt_calc = item.cast(pos,dir);
+            if(pt_calc) {
+                const dist = pt_calc.dist;
+                if( dist < min_distance) {
+                    min_distance = dist;
+                    calc_pt = pt_calc;
+                }
+            }
         }
-        let x = pos.x + dir.x * dist;
-        let y = pos.y + dir.y * dist;
-        //dots.push(new Dot(pt.x,pt.y,5));
-        return {'dist': dist, 'reflect': this.reflectVector(x,y)};
+        if(min_distance == Infinity) {
+            //Fail distance
+            return {'dist':MAX_POSS_DISTANCE, 'reflect': null};
+        }
+        return {'dist': min_distance, 'reflect': calc_pt.reflect};
+        
     }
 
     show() {
-        stroke(255);
-        noFill();
-        beginShape();
-        for(let i=0; i<= 6.283; i += .001) {
-            let r = this.r;
-            let x = cos(i)*r;
-            let y = sin(i) * r;
-            vertex(x + this.x,y + this.y);
+        let item;
+        for(item of this.items) {
+            item.show(this.matrix);
         }
-        endShape();
     }
 }
